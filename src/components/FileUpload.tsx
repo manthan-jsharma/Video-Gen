@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileVideo, FileText, ArrowRight, Download, ExternalLink, Music, Wand2, Mic, Play, FileAudio, Disc, Video, Clapperboard, Sparkles, CheckSquare, Edit2, Save, X, Headphones, Trash2, ArrowLeft, BookOpen, Globe, Github, Linkedin, Instagram, Facebook } from 'lucide-react';
-import { extractWavFromVideo } from '../utils/audioHelpers';
-import { generateSRT, generateTTS } from '../services/geminiService';
+import { extractWavFromVideo } from '@/src/utils/audioHelpers.ts';
+import { generateSRT, generateTTS } from '@/src/services/geminiService.ts';
 
 interface FileUploadProps {
   onFilesSelected: (videoFile: File, srtFile: File, isAudioOnly: boolean) => void;
