@@ -1,10 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { GeneratedContent, LayoutConfigStep } from '../types';
-import { Code, Layout, Settings, Save, Download, Music, ExternalLink, Copy, CheckCircle2, Sparkles, MessageSquare, Trash2, FileAudio, Key, Edit2, X, Check, Bot, Zap, Cpu, BrainCircuit, ShieldAlert, Lock, RefreshCw } from 'lucide-react';
-import { extractWavFromVideo } from '../utils/audioHelpers';
-import { constructPrompt } from '../utils/promptTemplates';
-import { validateGeminiConnection } from '../services/geminiService';
-import { APP_CONFIG } from '../config';
+import React, {useEffect, useState} from 'react';
+import {GeneratedContent, LayoutConfigStep} from '@/types.ts';
+import {
+  Bot,
+  BrainCircuit,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Code,
+  Copy,
+  Cpu,
+  Download,
+  Edit2,
+  ExternalLink,
+  FileAudio,
+  Key,
+  Layout,
+  Lock,
+  MessageSquare,
+  Music,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Settings,
+  Sparkles,
+  Subtitles,
+  Trash2,
+  X
+} from 'lucide-react';
+import {extractWavFromVideo} from '@/src/utils/audioHelpers.ts';
+import {constructPrompt} from '@/src/utils/promptTemplates.ts';
+import {validateGeminiConnection} from '@/src/services/geminiService.ts';
+import {APP_CONFIG} from '@/config.ts';
 
 interface EditorPanelProps {
   content: GeneratedContent;
@@ -24,11 +51,23 @@ interface EditorPanelProps {
   modelName: string;
   setModelName: (name: string) => void;
   onSaveApiKey: () => void;
+  subtitleFontSize: number;
+  onSubtitleFontSizeChange: (size: number) => void;
+  subtitleFontFamily: string;
+  onSubtitleFontFamilyChange: (family: string) => void;
+  subtitleColor: string;
+  onSubtitleColorChange: (color: string) => void;
+  subtitleBgColor: string;
+  onSubtitleBgColorChange: (color: string) => void;
+  subtitlePaddingX: number;
+  onSubtitlePaddingXChange: (padding: number) => void;
+  subtitlePaddingY: number;
+  onSubtitlePaddingYChange: (padding: number) => void;
 }
 
-export const EditorPanel: React.FC<EditorPanelProps> = ({ 
-  content, 
-  onUpdate, 
+export const EditorPanel: React.FC<EditorPanelProps> = ({
+  content,
+  onUpdate,
   isGenerating,
   onGenerate,
   videoFile,
@@ -43,13 +82,26 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   setApiKey,
   modelName,
   setModelName,
-  onSaveApiKey
+  onSaveApiKey,
+  subtitleFontSize,
+  onSubtitleFontSizeChange,
+  subtitleFontFamily,
+  onSubtitleFontFamilyChange,
+  subtitleColor,
+  onSubtitleColorChange,
+  subtitleBgColor,
+  onSubtitleBgColorChange,
+  subtitlePaddingX,
+  onSubtitlePaddingXChange,
+  subtitlePaddingY,
+  onSubtitlePaddingYChange
 }) => {
   const [activeTab, setActiveTab] = useState<'html' | 'config' | 'ai_audio'>('config');
   const [localConfig, setLocalConfig] = useState(JSON.stringify(content.layoutConfig, null, 2));
   const [localHtml, setLocalHtml] = useState(content.html);
   const [isExtracting, setIsExtracting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isSubtitleControlsExpanded, setIsSubtitleControlsExpanded] = useState(false);
 
   // Key Editing State
   const [isEditingKey, setIsEditingKey] = useState(false);
@@ -98,13 +150,13 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
     setKeyError(null);
 
     const isValid = await validateGeminiConnection(tempKey, tempModel);
-    
+
     setIsValidatingKey(false);
-    
+
     if (isValid) {
       setApiKey(tempKey);
       setModelName(tempModel);
-      setTimeout(() => onSaveApiKey(), 0); 
+      setTimeout(() => onSaveApiKey(), 0);
       setIsEditingKey(false);
     } else {
       setKeyError("Connection failed. Check key/model.");
@@ -140,22 +192,31 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
     onBgMusicChange(null);
   };
 
+  const handleResetSubtitleStyles = () => {
+    onSubtitleFontSizeChange(32);
+    onSubtitleFontFamilyChange('Inter');
+    onSubtitleColorChange('#FFFFFF');
+    onSubtitleBgColorChange('rgba(0,0,0,0.8)');
+    onSubtitlePaddingXChange(16);
+    onSubtitlePaddingYChange(8);
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-900 border-l border-gray-800">
       <div className="flex border-b border-gray-800">
-        <button 
+        <button
           onClick={() => setActiveTab('config')}
           className={`flex-1 p-3 flex items-center justify-center gap-2 text-sm font-medium ${activeTab === 'config' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
         >
           <Layout size={16} /> Layout
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('html')}
           className={`flex-1 p-3 flex items-center justify-center gap-2 text-sm font-medium ${activeTab === 'html' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
         >
           <Code size={16} /> HTML
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('ai_audio')}
           className={`flex-1 p-3 flex items-center justify-center gap-2 text-sm font-medium ${activeTab === 'ai_audio' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
         >
@@ -165,14 +226,14 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
       <div className="flex-1 overflow-auto p-4 relative">
         {activeTab === 'config' && (
-          <textarea 
+          <textarea
             className="w-full h-full bg-gray-950 text-green-400 font-mono text-sm p-4 rounded border border-gray-800 focus:border-purple-500 outline-none resize-none"
             value={localConfig}
             onChange={(e) => setLocalConfig(e.target.value)}
           />
         )}
         {activeTab === 'html' && (
-          <textarea 
+          <textarea
             className="w-full h-full bg-gray-950 text-blue-300 font-mono text-xs p-4 rounded border border-gray-800 focus:border-purple-500 outline-none resize-none"
             value={localHtml}
             onChange={(e) => setLocalHtml(e.target.value)}
@@ -180,7 +241,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
         )}
         {activeTab === 'ai_audio' && (
           <div className="space-y-6 text-sm">
-            
+
             {/* Visual Context / Refinement Instructions */}
             <div className={`p-4 rounded-lg space-y-3 ${hasContent ? 'bg-purple-900/10 border border-purple-500/30' : 'bg-gray-800/50'}`}>
                <div className="flex justify-between items-center">
@@ -188,16 +249,16 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                        {hasContent ? <><RefreshCw size={14} className="text-purple-400"/> Refine Scene</> : "Visual Context"}
                    </h3>
                </div>
-               
+
                <textarea
                  value={topicContext}
                  onChange={(e) => onTopicContextChange(e.target.value)}
                  className="w-full h-24 bg-gray-900 border border-gray-700 rounded p-2 text-xs text-gray-300 resize-none focus:border-purple-500 focus:outline-none"
                  placeholder={hasContent ? "Describe changes to make... e.g. 'Make the background blue' or 'Add particles'" : "Describe your video topic... e.g. 'Quantum Physics explanation with grids'"}
                />
-               
+
                <div className="flex gap-2">
-                 <button 
+                 <button
                     onClick={handleCopyPrompt}
                     className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs flex items-center justify-center gap-2 transition-colors"
                  >
@@ -214,8 +275,8 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                    <Sparkles size={16} className="text-purple-400" /> Internal Generator
                  </h3>
                  {!isEditingKey && (
-                   <button 
-                     onClick={() => setIsEditingKey(true)} 
+                   <button
+                     onClick={() => setIsEditingKey(true)}
                      className="text-xs text-gray-400 hover:text-white p-1 hover:bg-gray-700 rounded transition-colors flex items-center gap-1"
                      title="Edit API Key"
                    >
@@ -223,7 +284,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                    </button>
                  )}
               </div>
-              
+
               {!isEditingKey ? (
                 // Display Mode
                 <div className="space-y-2">
@@ -240,12 +301,12 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={onGenerate}
                     disabled={isGenerating || !apiKey}
                     className={`w-full flex items-center justify-center gap-2 py-2.5 rounded font-bold transition-all mt-2 ${
-                      !apiKey 
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                      !apiKey
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         : 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-900/20'
                     }`}
                   >
@@ -268,7 +329,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                              )}
                           </div>
                       </div>
-                      <input 
+                      <input
                         type="password"
                         value={tempKey}
                         onChange={(e) => setTempKey(e.target.value)}
@@ -276,10 +337,10 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                         className="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
                       />
                    </div>
-                   
+
                    <div className="space-y-1">
                       <label className="text-xs text-gray-400">Model</label>
-                      <select 
+                      <select
                          value={tempModel}
                          onChange={(e) => setTempModel(e.target.value)}
                          className="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
@@ -290,7 +351,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                          <option value="custom">Custom...</option>
                       </select>
                       {tempModel === 'custom' && (
-                         <input 
+                         <input
                            type="text"
                            placeholder="Enter model string..."
                            className="w-full mt-1 bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
@@ -302,13 +363,13 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                    {keyError && <div className="text-xs text-red-400 flex items-center gap-1"><X size={10}/> {keyError}</div>}
 
                    <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => setIsEditingKey(false)}
                         className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded text-xs transition-colors"
                       >
                         Cancel
                       </button>
-                      <button 
+                      <button
                         onClick={handleSaveKeyConfig}
                         disabled={isValidatingKey}
                         className="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-1.5 rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1"
@@ -317,11 +378,11 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                          Verify & Save
                       </button>
                    </div>
-                   
+
                    {/* Option to revert to Free Tier */}
                    {!isDefaultKey && (
                        <div className="pt-2 text-center border-t border-gray-700">
-                           <button 
+                           <button
                              onClick={() => {
                                  setApiKey(APP_CONFIG.DEFAULT_API_KEY);
                                  setModelName(APP_CONFIG.DEFAULT_MODEL);
@@ -365,8 +426,8 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
               <h3 className="font-bold text-white flex items-center gap-2">
                 <Music size={16} /> Audio Tools
               </h3>
-              
-              <button 
+
+              <button
                 onClick={extractAndDownloadAudio}
                 disabled={isExtracting}
                 className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 py-2 rounded text-white transition-colors"
@@ -390,19 +451,158 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
               </div>
             </div>
 
+            {/* Subtitle Controls */}
+            <div className="bg-gray-800/50 p-4 rounded-lg space-y-3">
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setIsSubtitleControlsExpanded(!isSubtitleControlsExpanded)}
+              >
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Subtitles size={16} /> Subtitle Style
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResetSubtitleStyles();
+                    }}
+                    className="p-1 hover:bg-gray-700 text-gray-400 hover:text-blue-400 rounded transition-colors"
+                    title="Reset to Defaults"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                  {isSubtitleControlsExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                </div>
+              </div>
+
+              {isSubtitleControlsExpanded && (
+                <div className="space-y-3 animate-fade-in">
+                  {/* Font Size */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Size</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="16" max="48" step="2"
+                        value={subtitleFontSize}
+                        onChange={(e) => onSubtitleFontSizeChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitleFontSize}px</span>
+                    </div>
+                  </div>
+
+                  {/* Font Family */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Family</label>
+                    <select
+                      value={subtitleFontFamily}
+                      onChange={(e) => onSubtitleFontFamilyChange(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                    >
+                      <option value="Inter">Inter (Default)</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Open Sans">Open Sans</option>
+                      <option value="Montserrat">Montserrat</option>
+                      <option value="Oswald">Oswald</option>
+                      <option value="Bebas Neue">Bebas Neue</option>
+                      <option value="Anton">Anton (Bold)</option>
+                      <option value="Bangers">Bangers (Comic)</option>
+                      <option value="Permanent Marker">Permanent Marker</option>
+                      <option value="Righteous">Righteous (Retro)</option>
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="Georgia, serif">Georgia</option>
+                      <option value="Impact, sans-serif">Impact</option>
+                    </select>
+                  </div>
+
+                  {/* Text Color */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={subtitleColor}
+                        onChange={(e) => onSubtitleColorChange(e.target.value)}
+                        className="w-10 h-8 bg-gray-950 border border-gray-700 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={subtitleColor}
+                        onChange={(e) => onSubtitleColorChange(e.target.value)}
+                        className="flex-1 bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-purple-500 outline-none"
+                        placeholder="#FFFFFF"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Background Color */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Background Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={subtitleBgColor}
+                        onChange={(e) => onSubtitleBgColorChange(e.target.value)}
+                        className="w-10 h-8 bg-gray-950 border border-gray-700 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={subtitleBgColor}
+                        onChange={(e) => onSubtitleBgColorChange(e.target.value)}
+                        className="flex-1 bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-purple-500 outline-none"
+                        placeholder="rgba(0,0,0,0.8)"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Horizontal Padding (Left & Right) */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Padding Left/Right</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0" max="32" step="2"
+                        value={subtitlePaddingX}
+                        onChange={(e) => onSubtitlePaddingXChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitlePaddingX}px</span>
+                    </div>
+                  </div>
+
+                  {/* Vertical Padding (Up & Down) */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Padding Top/Bottom</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0" max="32" step="2"
+                        value={subtitlePaddingY}
+                        onChange={(e) => onSubtitlePaddingYChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitlePaddingY}px</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Background Music */}
             <div className="bg-gray-800/50 p-4 rounded-lg space-y-3">
               <h3 className="font-bold text-white flex items-center gap-2">
                 <Music size={16} /> Background Music
               </h3>
-              
+
               {bgMusicName ? (
                 <div className="flex items-center justify-between bg-gray-700 rounded p-2">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <FileAudio size={16} className="text-purple-400 flex-shrink-0" />
                     <span className="text-xs text-white truncate">{bgMusicName}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={handleRemoveMusic}
                     className="p-1 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded transition-colors"
                     title="Remove Music"
@@ -411,8 +611,8 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                   </button>
                 </div>
               ) : (
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept="audio/*"
                   onChange={handleMusicUpload}
                   className="block w-full text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
@@ -421,8 +621,8 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">Vol:</span>
-                <input 
-                  type="range" 
+                <input
+                  type="range"
                   min="0" max="1" step="0.05"
                   value={bgMusicVolume}
                   onChange={(e) => onBgVolumeChange(parseFloat(e.target.value))}
@@ -437,7 +637,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
       </div>
 
       <div className="p-4 border-t border-gray-800 bg-gray-900">
-        <button 
+        <button
           onClick={handleSave}
           className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white py-2 rounded font-semibold transition-colors"
         >

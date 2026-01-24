@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { LayoutConfigStep, SRTItem } from '../types';
+import { LayoutConfigStep, SRTItem } from '@/types.ts';
 import { Play, Pause, RefreshCw, Maximize, Minimize, Video, StopCircle, X, AlertTriangle, Monitor } from 'lucide-react';
 
 interface ReelPlayerProps {
@@ -12,6 +12,12 @@ interface ReelPlayerProps {
   toggleFullScreen: () => void;
   bgMusicUrl?: string;
   bgMusicVolume?: number;
+  subtitleFontSize?: number;
+  subtitleFontFamily?: string;
+  subtitleColor?: string;
+  subtitleBgColor?: string;
+  subtitlePaddingX?: number;
+  subtitlePaddingY?: number;
 }
 
 export const ReelPlayer: React.FC<ReelPlayerProps> = ({
@@ -23,7 +29,13 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   fullScreenMode,
   toggleFullScreen,
   bgMusicUrl,
-  bgMusicVolume = 0.2
+  bgMusicVolume = 0.2,
+  subtitleFontSize = 32,
+  subtitleFontFamily = 'Inter',
+  subtitleColor = '#FFFFFF',
+  subtitleBgColor = 'rgba(0,0,0,0.8)',
+  subtitlePaddingX = 16,
+  subtitlePaddingY = 8
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -34,7 +46,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [showExportInfo, setShowExportInfo] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  
+
   // Key to force re-render iframe on restart
   const [iframeKey, setIframeKey] = useState(0);
 
@@ -69,7 +81,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   // --- Styles calculation ---
   const getLayoutStyles = () => {
     const { layoutMode, splitRatio = 0.5 } = currentLayout;
-    
+
     let htmlHeight = '50%';
     let videoHeight = '50%';
     let htmlZIndex = 10;
@@ -99,12 +111,12 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
 
   const getCaptionStyle = () => {
     const { layoutMode, splitRatio = 0.5, captionPosition } = currentLayout;
-    
+
     const baseStyle: React.CSSProperties = {
       position: 'absolute',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      width: '90%', 
+      width: '90%',
       display: 'flex',
       justifyContent: 'center',
       textAlign: 'center',
@@ -126,8 +138,8 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
     switch (captionPosition) {
       case 'top': return { ...baseStyle, top: '15%' };
       case 'center': return { ...baseStyle, top: '50%' };
-      case 'bottom': 
-      default: return { ...baseStyle, top: '80%' }; 
+      case 'bottom':
+      default: return { ...baseStyle, top: '80%' };
     }
   };
 
@@ -140,50 +152,60 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
     if (!currentCaption) return null;
 
     const WORDS_PER_VIEW = 5; // Max words to show at once
-    
+
     // Split full text into words
     const allWords = currentCaption.text.split(' ');
-    
+
     // Calculate progress through the current segment (0 to 1)
     const duration = currentCaption.endTime - currentCaption.startTime;
     const elapsed = currentTime - currentCaption.startTime;
     const progress = Math.max(0, Math.min(1, elapsed / duration));
-    
+
     // Determine which word is currently being spoken (Global Index)
     const globalActiveIndex = Math.floor(progress * allWords.length);
 
     // Determine which "Page" (Chunk) of words we are on
     const currentChunkIndex = Math.floor(globalActiveIndex / WORDS_PER_VIEW);
-    
+
     // Slice the array to get only the current chunk
     const startWordIndex = currentChunkIndex * WORDS_PER_VIEW;
     const endWordIndex = startWordIndex + WORDS_PER_VIEW;
     const visibleWords = allWords.slice(startWordIndex, endWordIndex);
 
     return (
-      <div 
-        className={`flex flex-wrap justify-center items-center gap-x-1.5 gap-y-1 px-4 py-2 rounded-2xl transition-all duration-300 ${isFullHtml ? 'bg-black/80 backdrop-blur-md border border-white/10 shadow-2xl' : ''}`}
-        style={{ minHeight: '60px' }} // STABILITY: Prevent layout shifts
+      <div
+        className={`flex flex-wrap justify-center items-center gap-x-1.5 gap-y-1 rounded-2xl transition-all duration-300 ${isFullHtml ? 'backdrop-blur-md border border-white/10 shadow-2xl' : ''}`}
+        style={{
+          minHeight: '60px',
+          backgroundColor: subtitleBgColor,
+          fontFamily: subtitleFontFamily,
+          paddingLeft: `${subtitlePaddingX}px`,
+          paddingRight: `${subtitlePaddingX}px`,
+          paddingTop: `${subtitlePaddingY}px`,
+          paddingBottom: `${subtitlePaddingY}px`
+        }}
       >
         {visibleWords.map((word, index) => {
           // Calculate the true index of this word in the original full sentence
           const trueIndex = startWordIndex + index;
-          
+
           const isActive = trueIndex === globalActiveIndex;
           const isPast = trueIndex < globalActiveIndex;
-          
+
           return (
-            <span 
+            <span
               key={`${currentCaption.id}-${trueIndex}`}
               className={`
-                transition-all duration-150 inline-block text-2xl md:text-2xl font-black tracking-wide leading-tight
-                ${isActive ? 'text-yellow-400 scale-110' : ''}
-                ${isPast ? 'text-white' : 'text-white/40'}
+                transition-all duration-150 inline-block font-black tracking-wide leading-tight
+                ${isActive ? 'scale-110' : ''}
               `}
               style={{
-                textShadow: isActive 
-                    ? '0 0 30px rgba(250, 204, 21, 0.6), 2px 2px 0px rgba(0,0,0,1)' 
-                    : '2px 2px 0px rgba(0,0,0,0.8)'
+                fontSize: `${subtitleFontSize}px`,
+                color: isActive ? '#fbbf24' : (isPast ? subtitleColor : `${subtitleColor}66`),
+                textShadow: isActive
+                    ? '0 0 30px rgba(250, 204, 21, 0.6), 2px 2px 0px rgba(0,0,0,1)'
+                    : '2px 2px 0px rgba(0,0,0,0.8)',
+                fontFamily: subtitleFontFamily
               }}
             >
               {word}
@@ -204,11 +226,11 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   // --- Iframe Load Handler ---
   const handleIframeLoad = () => {
     if (videoRef.current) {
-      postMessageToIframe({ 
-        type: 'timeupdate', 
-        time: videoRef.current.currentTime 
+      postMessageToIframe({
+        type: 'timeupdate',
+        time: videoRef.current.currentTime
       });
-      
+
       if (!videoRef.current.paused) {
          postMessageToIframe({ type: 'play' });
       }
@@ -216,7 +238,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   };
 
   // --- Background Music Management ---
-  
+
   // 1. Handle Volume Changes
   useEffect(() => {
     if (audioRef.current) {
@@ -233,7 +255,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
         audio.src = bgMusicUrl;
         audio.load();
         audio.volume = bgMusicVolume; // Ensure volume is set immediately
-        
+
         // Sync to video immediately
         if (videoRef.current) {
           audio.currentTime = videoRef.current.currentTime;
@@ -249,7 +271,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
       } else {
         // Clear source if removed
         audio.pause();
-        audio.removeAttribute('src'); 
+        audio.removeAttribute('src');
         audio.load();
       }
     }
@@ -265,7 +287,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
       if (video && !video.paused) {
         const time = video.currentTime;
         setCurrentTime(time);
-        
+
         postMessageToIframe({ type: 'timeupdate', time });
 
         // Sync Audio logic
@@ -275,7 +297,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
           if (drift > 0.2) {
             audioRef.current.currentTime = time;
           }
-        } 
+        }
         // Force play if video is playing but audio isn't (and audio exists)
         else if (audioRef.current && bgMusicUrl && audioRef.current.paused && video.readyState >= 3) {
              audioRef.current.currentTime = time;
@@ -315,10 +337,10 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
       setDuration(video.duration);
       postMessageToIframe({ type: 'timeupdate', time: video.currentTime });
     };
-    
+
     const handleEnded = () => {
       setIsPlaying(false);
-      postMessageToIframe({ type: 'pause' }); 
+      postMessageToIframe({ type: 'pause' });
       if (audio) {
         audio.pause();
         audio.currentTime = 0;
@@ -347,7 +369,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
     video.addEventListener('ended', handleEnded);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('seeked', handleSeeked); 
+    video.addEventListener('seeked', handleSeeked);
 
     return () => {
       video.removeEventListener('play', handlePlay);
@@ -370,10 +392,10 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play();
-      
+
       // Force Iframe Reload
       setIframeKey(prev => prev + 1);
-      
+
       // Reset Audio
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
@@ -404,13 +426,13 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
 
       if (!fullScreenMode) {
         toggleFullScreen();
-        await new Promise(r => setTimeout(r, 500)); 
+        await new Promise(r => setTimeout(r, 500));
       }
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: "browser" },
         audio: true,
-        preferCurrentTab: true, 
+        preferCurrentTab: true,
       } as any);
 
       const recorder = new MediaRecorder(stream, { mimeType });
@@ -428,7 +450,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
         const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
         a.download = `reel-export-${Date.now()}.${ext}`;
         a.click();
-        
+
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -458,18 +480,18 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
 
   return (
     <div className={`flex flex-col items-center justify-center ${fullScreenMode ? 'fixed inset-0 z-50 bg-black' : 'h-full'}`}>
-      
-      <div 
+
+      <div
         className="relative bg-black overflow-hidden shadow-2xl border border-gray-800"
         style={{
-          width: fullScreenMode ? '100vh' : '360px', 
-          height: fullScreenMode ? '100vh' : '640px', 
+          width: fullScreenMode ? '100vh' : '360px',
+          height: fullScreenMode ? '100vh' : '640px',
           aspectRatio: '9/16',
           maxWidth: fullScreenMode ? '100vw' : '100%',
           cursor: isRecording ? 'none' : 'default'
         }}
       >
-        <div 
+        <div
           className="absolute top-0 left-0 w-full overflow-hidden bg-gray-900"
           style={layoutStyles.htmlContainer}
         >
@@ -484,7 +506,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
           />
         </div>
 
-        <div 
+        <div
           className="absolute bottom-0 left-0 w-full overflow-hidden bg-black"
           style={layoutStyles.videoContainer}
         >
@@ -498,7 +520,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
             muted={false}
           />
           {/* Background Music - Hidden */}
-          <audio 
+          <audio
             ref={audioRef}
             loop
           />
@@ -532,7 +554,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
 
       {!isRecording && (
         <div className="mt-4 flex gap-4">
-           <button 
+           <button
             onClick={togglePlay}
             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors"
           >
@@ -540,7 +562,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
             {isPlaying ? 'Pause' : 'Play'}
           </button>
 
-          <button 
+          <button
             onClick={toggleFullScreen}
             className="flex items-center gap-2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
           >
@@ -548,7 +570,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
             {fullScreenMode ? 'Exit Fullscreen' : 'Fullscreen Preview'}
           </button>
 
-          <button 
+          <button
             onClick={() => setShowExportInfo(true)}
             className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg shadow-red-900/20"
           >
@@ -562,7 +584,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
       {showExportInfo && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full shadow-2xl relative">
-              <button 
+              <button
                 onClick={() => setShowExportInfo(false)}
                 className="absolute top-4 right-4 text-gray-500 hover:text-white"
               >
@@ -573,11 +595,11 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
                 <AlertTriangle size={24} />
                 <h3 className="text-lg font-bold text-white">Export Unavailable</h3>
               </div>
-              
+
               <p className="text-gray-300 text-sm mb-4 leading-relaxed">
                 Server-side FFmpeg recording is currently <strong>disabled</strong> for the Public Preview.
               </p>
-              
+
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg mb-6 text-xs text-red-200 font-mono">
                  "Running video rendering for everyone for free would melt my servers! 🔥"
               </div>
@@ -592,13 +614,13 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
               </div>
 
               <div className="flex flex-col gap-3">
-                 <button 
+                 <button
                    onClick={() => setShowExportInfo(false)}
                    className="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors text-sm"
                  >
                    Got it, I'll use OBS
                  </button>
-                 
+
                  <button
                    onClick={() => {
                      setShowExportInfo(false);
@@ -615,7 +637,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
 
       {isRecording && (
         <div className="fixed top-4 right-4 z-[100]">
-           <button 
+           <button
             onClick={stopRecording}
             className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-full font-bold shadow-2xl animate-pulse"
           >

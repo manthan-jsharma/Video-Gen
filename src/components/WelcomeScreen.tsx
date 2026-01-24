@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, ShieldCheck, AlertTriangle, ExternalLink, PlayCircle } from 'lucide-react';
-import { validateGeminiConnection } from '../services/geminiService';
-import { APP_CONFIG } from '../config';
+import { validateGeminiConnection } from '@/src/services/geminiService.ts';
+import { APP_CONFIG } from '@/config.ts';
 
 interface WelcomeScreenProps {
   onComplete: (apiKey: string | null, model?: string, saveManualMode?: boolean) => void;
