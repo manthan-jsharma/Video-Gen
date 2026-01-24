@@ -5,6 +5,8 @@ import {
   BrainCircuit,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Code,
   Copy,
   Cpu,
@@ -18,9 +20,11 @@ import {
   MessageSquare,
   Music,
   RefreshCw,
+  RotateCcw,
   Save,
   Settings,
   Sparkles,
+  Subtitles,
   Trash2,
   X
 } from 'lucide-react';
@@ -47,6 +51,18 @@ interface EditorPanelProps {
   modelName: string;
   setModelName: (name: string) => void;
   onSaveApiKey: () => void;
+  subtitleFontSize: number;
+  onSubtitleFontSizeChange: (size: number) => void;
+  subtitleFontFamily: string;
+  onSubtitleFontFamilyChange: (family: string) => void;
+  subtitleColor: string;
+  onSubtitleColorChange: (color: string) => void;
+  subtitleBgColor: string;
+  onSubtitleBgColorChange: (color: string) => void;
+  subtitlePaddingX: number;
+  onSubtitlePaddingXChange: (padding: number) => void;
+  subtitlePaddingY: number;
+  onSubtitlePaddingYChange: (padding: number) => void;
 }
 
 export const EditorPanel: React.FC<EditorPanelProps> = ({
@@ -66,13 +82,26 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   setApiKey,
   modelName,
   setModelName,
-  onSaveApiKey
+  onSaveApiKey,
+  subtitleFontSize,
+  onSubtitleFontSizeChange,
+  subtitleFontFamily,
+  onSubtitleFontFamilyChange,
+  subtitleColor,
+  onSubtitleColorChange,
+  subtitleBgColor,
+  onSubtitleBgColorChange,
+  subtitlePaddingX,
+  onSubtitlePaddingXChange,
+  subtitlePaddingY,
+  onSubtitlePaddingYChange
 }) => {
   const [activeTab, setActiveTab] = useState<'html' | 'config' | 'ai_audio'>('config');
   const [localConfig, setLocalConfig] = useState(JSON.stringify(content.layoutConfig, null, 2));
   const [localHtml, setLocalHtml] = useState(content.html);
   const [isExtracting, setIsExtracting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isSubtitleControlsExpanded, setIsSubtitleControlsExpanded] = useState(false);
 
   // Key Editing State
   const [isEditingKey, setIsEditingKey] = useState(false);
@@ -161,6 +190,15 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
   const handleRemoveMusic = () => {
     onBgMusicChange(null);
+  };
+
+  const handleResetSubtitleStyles = () => {
+    onSubtitleFontSizeChange(32);
+    onSubtitleFontFamilyChange('Inter');
+    onSubtitleColorChange('#FFFFFF');
+    onSubtitleBgColorChange('rgba(0,0,0,0.8)');
+    onSubtitlePaddingXChange(16);
+    onSubtitlePaddingYChange(8);
   };
 
   return (
@@ -267,8 +305,8 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                     onClick={onGenerate}
                     disabled={isGenerating || !apiKey}
                     className={`w-full flex items-center justify-center gap-2 py-2.5 rounded font-bold transition-all mt-2 ${
-                      !apiKey 
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                      !apiKey
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         : 'bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-900/20'
                     }`}
                   >
@@ -411,6 +449,145 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                    Adobe Enhance
                  </a>
               </div>
+            </div>
+
+            {/* Subtitle Controls */}
+            <div className="bg-gray-800/50 p-4 rounded-lg space-y-3">
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setIsSubtitleControlsExpanded(!isSubtitleControlsExpanded)}
+              >
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Subtitles size={16} /> Subtitle Style
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResetSubtitleStyles();
+                    }}
+                    className="p-1 hover:bg-gray-700 text-gray-400 hover:text-blue-400 rounded transition-colors"
+                    title="Reset to Defaults"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                  {isSubtitleControlsExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                </div>
+              </div>
+
+              {isSubtitleControlsExpanded && (
+                <div className="space-y-3 animate-fade-in">
+                  {/* Font Size */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Size</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="16" max="48" step="2"
+                        value={subtitleFontSize}
+                        onChange={(e) => onSubtitleFontSizeChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitleFontSize}px</span>
+                    </div>
+                  </div>
+
+                  {/* Font Family */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Font Family</label>
+                    <select
+                      value={subtitleFontFamily}
+                      onChange={(e) => onSubtitleFontFamilyChange(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                    >
+                      <option value="Inter">Inter (Default)</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Open Sans">Open Sans</option>
+                      <option value="Montserrat">Montserrat</option>
+                      <option value="Oswald">Oswald</option>
+                      <option value="Bebas Neue">Bebas Neue</option>
+                      <option value="Anton">Anton (Bold)</option>
+                      <option value="Bangers">Bangers (Comic)</option>
+                      <option value="Permanent Marker">Permanent Marker</option>
+                      <option value="Righteous">Righteous (Retro)</option>
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="Georgia, serif">Georgia</option>
+                      <option value="Impact, sans-serif">Impact</option>
+                    </select>
+                  </div>
+
+                  {/* Text Color */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Text Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={subtitleColor}
+                        onChange={(e) => onSubtitleColorChange(e.target.value)}
+                        className="w-10 h-8 bg-gray-950 border border-gray-700 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={subtitleColor}
+                        onChange={(e) => onSubtitleColorChange(e.target.value)}
+                        className="flex-1 bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-purple-500 outline-none"
+                        placeholder="#FFFFFF"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Background Color */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Background Color</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={subtitleBgColor}
+                        onChange={(e) => onSubtitleBgColorChange(e.target.value)}
+                        className="w-10 h-8 bg-gray-950 border border-gray-700 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={subtitleBgColor}
+                        onChange={(e) => onSubtitleBgColorChange(e.target.value)}
+                        className="flex-1 bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-purple-500 outline-none"
+                        placeholder="rgba(0,0,0,0.8)"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Horizontal Padding (Left & Right) */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Padding Left/Right</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0" max="32" step="2"
+                        value={subtitlePaddingX}
+                        onChange={(e) => onSubtitlePaddingXChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitlePaddingX}px</span>
+                    </div>
+                  </div>
+
+                  {/* Vertical Padding (Up & Down) */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-400">Padding Top/Bottom</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0" max="32" step="2"
+                        value={subtitlePaddingY}
+                        onChange={(e) => onSubtitlePaddingYChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-xs w-10 text-right text-white">{subtitlePaddingY}px</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Background Music */}

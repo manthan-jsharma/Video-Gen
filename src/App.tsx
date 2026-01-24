@@ -59,6 +59,14 @@ const App: React.FC = () => {
   const [bgMusicUrl, setBgMusicUrl] = useState<string | undefined>(undefined);
   const [bgMusicVolume, setBgMusicVolume] = useState(0.2);
 
+  // Subtitle Style State
+  const [subtitleFontSize, setSubtitleFontSize] = useState(32);
+  const [subtitleFontFamily, setSubtitleFontFamily] = useState('Inter');
+  const [subtitleColor, setSubtitleColor] = useState('#FFFFFF');
+  const [subtitleBgColor, setSubtitleBgColor] = useState('rgba(0,0,0,0.8)');
+  const [subtitlePaddingX, setSubtitlePaddingX] = useState(16);
+  const [subtitlePaddingY, setSubtitlePaddingY] = useState(8);
+
   // Manage Video Object URL
   useEffect(() => {
     if (!videoFile) return;
@@ -365,6 +373,18 @@ const App: React.FC = () => {
                   modelName={modelName}
                   setModelName={setModelName}
                   onSaveApiKey={saveApiKeyToStorage}
+                  subtitleFontSize={subtitleFontSize}
+                  onSubtitleFontSizeChange={setSubtitleFontSize}
+                  subtitleFontFamily={subtitleFontFamily}
+                  onSubtitleFontFamilyChange={setSubtitleFontFamily}
+                  subtitleColor={subtitleColor}
+                  onSubtitleColorChange={setSubtitleColor}
+                  subtitleBgColor={subtitleBgColor}
+                  onSubtitleBgColorChange={setSubtitleBgColor}
+                  subtitlePaddingX={subtitlePaddingX}
+                  onSubtitlePaddingXChange={setSubtitlePaddingX}
+                  subtitlePaddingY={subtitlePaddingY}
+                  onSubtitlePaddingYChange={setSubtitlePaddingY}
                 />
               )}
             </main>

@@ -26,6 +26,18 @@ interface EditorViewProps {
   modelName: string;
   setModelName: (name: string) => void;
   onSaveApiKey: () => void;
+  subtitleFontSize: number;
+  onSubtitleFontSizeChange: (size: number) => void;
+  subtitleFontFamily: string;
+  onSubtitleFontFamilyChange: (family: string) => void;
+  subtitleColor: string;
+  onSubtitleColorChange: (color: string) => void;
+  subtitleBgColor: string;
+  onSubtitleBgColorChange: (color: string) => void;
+  subtitlePaddingX: number;
+  onSubtitlePaddingXChange: (padding: number) => void;
+  subtitlePaddingY: number;
+  onSubtitlePaddingYChange: (padding: number) => void;
 }
 
 export const EditorView: React.FC<EditorViewProps> = ({
@@ -50,7 +62,19 @@ export const EditorView: React.FC<EditorViewProps> = ({
   setApiKey,
   modelName,
   setModelName,
-  onSaveApiKey
+  onSaveApiKey,
+  subtitleFontSize,
+  onSubtitleFontSizeChange,
+  subtitleFontFamily,
+  onSubtitleFontFamilyChange,
+  subtitleColor,
+  onSubtitleColorChange,
+  subtitleBgColor,
+  onSubtitleBgColorChange,
+  subtitlePaddingX,
+  onSubtitlePaddingXChange,
+  subtitlePaddingY,
+  onSubtitlePaddingYChange
 }) => {
   return (
     <div className="flex h-full">
@@ -67,6 +91,12 @@ export const EditorView: React.FC<EditorViewProps> = ({
           toggleFullScreen={toggleFullScreen}
           bgMusicUrl={bgMusicUrl}
           bgMusicVolume={bgMusicVolume}
+          subtitleFontSize={subtitleFontSize}
+          subtitleFontFamily={subtitleFontFamily}
+          subtitleColor={subtitleColor}
+          subtitleBgColor={subtitleBgColor}
+          subtitlePaddingX={subtitlePaddingX}
+          subtitlePaddingY={subtitlePaddingY}
         />
       </div>
 
@@ -91,6 +121,18 @@ export const EditorView: React.FC<EditorViewProps> = ({
             modelName={modelName}
             setModelName={setModelName}
             onSaveApiKey={onSaveApiKey}
+            subtitleFontSize={subtitleFontSize}
+            onSubtitleFontSizeChange={onSubtitleFontSizeChange}
+            subtitleFontFamily={subtitleFontFamily}
+            onSubtitleFontFamilyChange={onSubtitleFontFamilyChange}
+            subtitleColor={subtitleColor}
+            onSubtitleColorChange={onSubtitleColorChange}
+            subtitleBgColor={subtitleBgColor}
+            onSubtitleBgColorChange={onSubtitleBgColorChange}
+            subtitlePaddingX={subtitlePaddingX}
+            onSubtitlePaddingXChange={onSubtitlePaddingXChange}
+            subtitlePaddingY={subtitlePaddingY}
+            onSubtitlePaddingYChange={onSubtitlePaddingYChange}
           />
         </div>
       )}
