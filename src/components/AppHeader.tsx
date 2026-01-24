@@ -31,7 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onResetAuth, onNewProject 
           New Project
         </button>
         <div className="w-px h-4 bg-gray-700"></div>
-        <span className="text-xs uppercase tracking-widest text-purple-400">v1.2.5</span>
+        <span className="text-xs uppercase tracking-widest text-purple-400">v1.3</span>
       </div>
     </header>
   );
