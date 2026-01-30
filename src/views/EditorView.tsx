@@ -10,6 +10,7 @@ interface EditorViewProps {
   isFullScreen: boolean;
   toggleFullScreen: () => void;
   bgMusicUrl?: string;
+  bgMusicFile?: File | null;
   bgMusicVolume: number;
   isGenerating: boolean;
   onGenerate: () => void;
@@ -48,6 +49,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
   toggleFullScreen,
   bgMusicUrl,
   bgMusicVolume,
+  bgMusicFile,
   isGenerating,
   onGenerate,
   onUpdate,
@@ -84,6 +86,8 @@ export const EditorView: React.FC<EditorViewProps> = ({
       >
         <ReelPlayer
           videoUrl={videoUrl}
+          videoFile={videoFile}
+          bgMusicFile={bgMusicFile}
           srtData={srtData}
           htmlContent={generatedContent.html}
           layoutConfig={generatedContent.layoutConfig}

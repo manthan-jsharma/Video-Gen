@@ -4,6 +4,9 @@ import { Play, Pause, RefreshCw, Maximize, Minimize, Video, StopCircle, X, Alert
 
 interface ReelPlayerProps {
   videoUrl: string;
+  videoFile?: File | null; 
+  bgMusicFile?: File | null;
+  renderMode?: boolean;
   srtData: SRTItem[];
   htmlContent: string;
   layoutConfig: LayoutConfigStep[];
@@ -22,6 +25,8 @@ interface ReelPlayerProps {
 
 export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   videoUrl,
+  videoFile,    
+  bgMusicFile,
   srtData,
   htmlContent,
   layoutConfig,
@@ -29,6 +34,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   fullScreenMode,
   toggleFullScreen,
   bgMusicUrl,
+  renderMode = false,
   bgMusicVolume = 0.2,
   subtitleFontSize = 32,
   subtitleFontFamily = 'Inter',
@@ -50,6 +56,63 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
   // Key to force re-render iframe on restart
   const [iframeKey, setIframeKey] = useState(0);
 
+  // --- Server Export Logic ---
+  const handleServerExport = async () => {
+    if (!videoFile) {
+      alert("No video file found to export!");
+      return;
+    }
+
+    const confirmExport = confirm("Start Server-Side Render? This will open a new terminal process.");
+    if (!confirmExport) return;
+
+    try {
+      // 1. Upload Assets
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      if (bgMusicFile) {
+        formData.append('audio', bgMusicFile);
+      }
+
+      console.log("Uploading assets...");
+      const uploadRes = await fetch('http://localhost:3001/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const { videoPath, audioPath, localVideoPath, localAudioPath } = await uploadRes.json();      
+      // 2. Trigger Render
+      console.log("Requesting render...");
+      const renderRes = await fetch('http://localhost:3001/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: videoPath,      // Server-side path
+          bgMusicUrl: audioPath,
+          localVideoPath: localVideoPath,
+          htmlContent: htmlContent, // React Content
+          srtData: srtData,         // Subtitles
+          layoutConfig: layoutConfig,
+          localAudioPath: localAudioPath,
+          duration: duration || 15
+        })
+      });
+
+      if (!renderRes.ok) throw new Error("Render failed");
+      
+      const { downloadUrl } = await renderRes.json();
+      
+      // 3. Download
+      if (confirm("Render Complete! Download now?")) {
+          window.open(downloadUrl, '_blank');
+      }
+
+    } catch (e: any) {
+      alert("Export Failed: " + e.message);
+      console.error(e);
+    }
+  };
   // --- Computed State based on Time ---
   const currentLayout = useMemo(() => {
     // 1. Try to find the specific layout step for the current time
@@ -552,36 +615,36 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
         )}
       </div>
 
-      {!isRecording && (
-        <div className="mt-4 flex gap-4">
-           <button
-            onClick={togglePlay}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors"
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            {isPlaying ? 'Pause' : 'Play'}
-          </button>
+      {!isRecording && !renderMode && (
+  <div className="mt-4 flex gap-4">
+     <button
+      onClick={togglePlay}
+      className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors"
+    >
+      {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+      {isPlaying ? 'Pause' : 'Play'}
+    </button>
 
-          <button
-            onClick={toggleFullScreen}
-            className="flex items-center gap-2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
-          >
-            {fullScreenMode ? <Minimize size={18} /> : <Maximize size={18} />}
-            {fullScreenMode ? 'Exit Fullscreen' : 'Fullscreen Preview'}
-          </button>
+    <button
+      onClick={toggleFullScreen}
+      className="flex items-center gap-2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
+    >
+      {fullScreenMode ? <Minimize size={18} /> : <Maximize size={18} />}
+      {fullScreenMode ? 'Exit Fullscreen' : 'Fullscreen Preview'}
+    </button>
 
-          <button
-            onClick={() => setShowExportInfo(true)}
-            className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg shadow-red-900/20"
-          >
-            <Video size={18} />
-            Rec & Export
-          </button>
-        </div>
-      )}
+    <button
+      onClick={handleServerExport}
+      className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors shadow-lg shadow-red-900/20"
+    >
+      <Video size={18} />
+      Rec & Export
+    </button>
+  </div>
+)}
 
       {/* Export Information Modal */}
-      {showExportInfo && (
+      {/* {showExportInfo && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full shadow-2xl relative">
               <button
@@ -633,7 +696,7 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
               </div>
            </div>
         </div>
-      )}
+      )} */}
 
       {isRecording && (
         <div className="fixed top-4 right-4 z-[100]">
@@ -647,10 +710,12 @@ export const ReelPlayer: React.FC<ReelPlayerProps> = ({
         </div>
       )}
 
-       <div className="mt-2 text-gray-500 text-sm">
-         {!isRecording && fullScreenMode && "Press ESC to exit fullscreen"}
-         {isRecording && "Recording in progress... content will auto-download on finish."}
-       </div>
+{!renderMode && (
+  <div className="mt-2 text-gray-500 text-sm">
+    {!isRecording && fullScreenMode && "Press ESC to exit fullscreen"}
+    {isRecording && "Recording in progress... content will auto-download on finish."}
+  </div>
+)}
     </div>
   );
 };

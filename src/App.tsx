@@ -11,7 +11,8 @@ import {parseSRT} from '@/src/utils/srtParser.ts';
 import {AppState, GeneratedContent, SRTItem} from '../types.ts';
 import {generateReelContent} from '@/src/services/geminiService.ts';
 import {APP_CONFIG} from '../config.ts';
-import {constructPrompt, EXAMPLE_HTML, EXAMPLE_JSON, EXAMPLE_SRT, EXAMPLE_TOPIC} from '@/src/utils/promptTemplates.ts';
+import { constructPrompt, EXAMPLE_HTML, EXAMPLE_JSON, EXAMPLE_SRT, EXAMPLE_TOPIC } from '@/src/utils/promptTemplates.ts';
+import { RenderCanvas } from '@/src/views/RenderCanvas.tsx';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(() => {
@@ -26,6 +27,12 @@ const App: React.FC = () => {
     // If key exists, go to UPLOAD, else WELCOME
     return stored ? AppState.UPLOAD : AppState.WELCOME;
   });
+
+  const [isRenderMode, setIsRenderMode] = useState(window.location.pathname === '/render-view');
+
+  if (isRenderMode) {
+    return <RenderCanvas />;
+  }
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -357,6 +364,7 @@ const App: React.FC = () => {
                   isFullScreen={isFullScreen}
                   toggleFullScreen={toggleFullScreen}
                   bgMusicUrl={bgMusicUrl}
+                  bgMusicFile={bgMusicFile}
                   bgMusicVolume={bgMusicVolume}
                   isGenerating={isGenerating}
                   onGenerate={handleGenerate}
